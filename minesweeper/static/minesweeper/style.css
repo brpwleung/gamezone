@@ -1,0 +1,155 @@
+body {
+    font-family: 'Roboto Slab', serif;
+}
+
+.container {
+    width: 100%;
+}
+
+.banner {
+    background-color: #98971a;
+    color: #ebdbb2;
+    position: relative;
+    height: 100px;
+}
+
+.banner h1 {
+    font-family: 'Tangerine', serif;
+    font-size: 48px;
+    height: 50px;
+    left: 5%;
+    margin: -25px auto 0 auto;
+    position: absolute;
+    text-align: center;
+    top: 50%;
+    width: 90%;
+}
+
+.wrapper {
+    width: 100%
+}
+
+.sidebar {
+    background-color: #ebdbb2;
+    float: left;
+    height: 680px;
+    position: relative;
+    width: 30%;
+}
+
+.sidebar .new_game_form {
+    color: #282828;
+    height: 300px;
+    left: 20%;
+    position: absolute;
+    margin: -150px auto 0 auto;
+    top: 50%;
+    width: 60%;
+}
+
+.sidebar .new_game_form h2 {
+    margin: 18px auto;
+    width: 100%
+}
+
+.sidebar .new_game_form .radio_button {
+    margin: 18px auto 18px 20px;
+}
+
+.sidebar .new_game_form .radio_label {
+    margin: 0 auto 0 20px;
+}
+
+.sidebar .new_game_form .button {
+    background-color: #b2bb26;
+    border: 2px solid #98971a;
+    border-radius: 12px;
+    color: #282828;
+    font-family: "Roboto Slab", sans-serif;
+    margin: 18px auto;
+    padding: 12px 16px;
+    text-align: center;
+    text-decoration: none;
+    width: 100%;
+}
+
+.main {
+    background-color: #b8bb26;
+    float: left;
+    height: 680px;
+    position: relative;
+    width: 70%;
+}
+
+#game_controls {
+    height: 48px;
+    left: 5%;
+    position: absolute;
+    width: 90%;
+}
+
+#game_controls .button {
+    background-color: #ebdbb2;
+    border: 2px solid #282828;
+    border-radius: 12px;
+    color: #282828;
+    font-family: "Roboto Slab", sans-serif;
+    margin: 0 auto;
+    padding: 12px 16px;
+    position: relative;
+    text-align: center;
+    text-decoration: none;
+    width: 90px;
+}
+
+#game_status {
+    font-size: 24px;
+    height: 50px;
+    left: 5%;
+    position: absolute;
+    text-align: center;
+    width: 90%
+}
+
+.clearfix {
+    clear: both;
+}
+
+.footer {
+    background-color: #98971a;
+    color: #ebdbb2;
+    height: 100px;
+    position: relative;
+    width: 100%;
+}
+
+.footer .content {
+    height: 70px;
+    margin: -35px auto 0 auto;
+    left: 25%;
+    position: absolute;
+    text-align: center;
+    top: 50%;
+    width: 50%;
+}
+
+.footer h3 {
+    padding: 0 auto;
+    margin: 0 auto;
+}
+
+.footer ul {
+    padding: 0 auto;
+    margin: 0 auto;
+}
+
+.tile {
+    background-color: #ebdbb2;
+    border: 2px solid #282828;
+    display: block;
+    float: left;
+    height: 30px;
+    text-align: center;
+    vertical-align: middle;
+    width: 30px;
+}

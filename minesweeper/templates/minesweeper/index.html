@@ -1,0 +1,271 @@
+{% load static %}
+{% csrf_token %}
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Slab">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Tangerine">
+<link rel="stylesheet" href="{% static 'minesweeper/style.css' %}" type="text/css" />
+<script src="{% static 'minesweeper/jquery-3.2.1.js' %}"></script>
+
+<div class="container">
+    <div class="banner">
+        <div class="content">
+            <h1>Minesweeper</h1>
+        </div>
+    </div>
+    <div class="wrapper">
+        <div class="sidebar">
+            <div class="new_game_form">
+                <h2>Difficulty:</h2>
+                <form action="{% url 'minesweeper:new_game' %}" method="post" id="new_game">
+                    <input type="radio" name="difficulty" id="difficulty_easy" value="easy" class="radio_button"/>
+                    <label for="difficulty_easy" class="radio_label">Easy</label><br />
+                    <input type="radio" name="difficulty" id="difficulty_normal" value="normal" class="radio_button" checked />
+                    <label for="difficulty_normal" class="radio_label">Normal</label><br />
+                    <input type="radio" name="difficulty" id="difficulty_hard" value="hard" class="radio_button"/>
+                    <label for="difficulty_hard" class="radio_label">Hard</label><br />
+                    <input type="submit" name="difficulty" value="New Game" class="button"/>
+                </form>
+            </div>
+        </div>
+        <div class="main">
+            <div id="game_board">
+            </div>
+            <div id="game_controls">
+            </div>
+            <div id="game_status">
+            </div>
+        </div>
+        <div class="clearfix">
+        </div>
+    </div>
+    <div class="footer">
+        <div class="content">
+            <h3>Controls:</h3>
+            <ul>
+                <li>
+                    Left-click on a tile to reveal its content.
+                </li>
+                <li>
+                    Right-click to flag/unflag a tile.
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    /*
+     * Protect the AJAX communications against cross-site request forgery.
+     */
+    var csrftoken = jQuery("[name=csrfmiddlewaretoken]").val()
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings) {
+            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+        }
+    });
+
+    /*
+     * Update the game board as a result of user action.
+     */
+    function update_game_board(game_data) {
+        /*
+         * Render any tiles that were covered (by an 'undo' action).
+         */
+        if (typeof game_data.covered !== "undefined") {
+            for (var i = 0; i < game_data.covered.length; i++) {
+                var currentTile = $("#"+game_data.covered[i]);
+                currentTile.empty();
+                currentTile.css("background-color", "#ebdbb2");
+            }
+        }
+        /*
+         * Render any tiles that were unflagged.
+         */
+        if (typeof game_data.unflagged !== "undefined") {
+            for (var i = 0; i < game_data.unflagged.length; i++) {
+                var currentTile = $("#"+game_data.unflagged[i]);
+                currentTile.empty();
+                currentTile.css("background-color", "#ebdbb2");
+            }
+        }
+        /*
+         * Render any tiles that were flagged.
+         */
+        if (typeof game_data.flagged !== "undefined") {
+            for (var i = 0; i < game_data.flagged.length; i++) {
+                var currentTile = $("#"+game_data.flagged[i]);
+                currentTile.empty();
+                currentTile.css("background-color", "#83a598");
+            }
+        }
+        /*
+         * Render the revealled tiles using the corresponding tile
+         * neighbourhood mine count. A negative count indicates a mined
+         * tile.
+         */
+        if (typeof game_data.revealled !== "undefined") {
+            for (var i = 0; i < game_data.revealled.length; i++) {
+                var currentTile = $("#"+game_data.revealled[i]);
+                if (game_data.count[i] < 0) {
+                    currentTile.empty();
+                    currentTile.append("B");
+                    currentTile.css("background-color", "#fb4934");
+                    currentTile.css("color", "#ebdbb2");
+                } else {
+                    if (game_data.count[i] > 0) {
+                        currentTile.empty();
+                        currentTile.append(game_data.count[i]);
+                        currentTile.css("color", "#fabd2f");
+                    }
+                    currentTile.css("background-color", "#7c6f64");
+                }
+            }
+        }
+        /*
+         * Report on the gameplay results if the game is no longer
+         * ongoing.
+         */
+        if (typeof game_data.game_status !== "undefined") {
+            if (game_data.game_status !== 0) {
+                $("#game_status").empty();
+                if (game_data.game_status > 0) {
+                    $("#game_status").append("Congratulations!");
+                } else {
+                    $("#game_status").append("Tough luck.");
+                }
+            }
+        }
+    }
+
+    var socket = new WebSocket("ws://" + window.location.host + "/players");
+    socket.onmessage = function(e) {
+        var json = JSON.parse(e.data);
+        if (json.action === 'construct') {
+            construct_game_board(json.game_data);
+        }
+        update_game_board(json.game_data);
+    }
+
+    function construct_game_board(game_data) {
+        /*
+         * Step 1: Render the latest game board and replace the old one.
+         */
+        var game_board = '';
+        for (let i = 0; i < game_data.num_rows; i++) {
+            game_board += "<div style='clear: both'>"
+            for (let j = 0; j < game_data.num_cols; j++) {
+                game_board += "<div id='"
+                    + (i*game_data.num_cols + j)
+                    + "' class='tile'></div>";
+            }
+            game_board += "</div>";
+        }
+        game_board += "<div style='clear: both'></div>";
+        $("#game_board").empty();
+        $("#game_board").append(game_board);
+        var game_board_width_px = game_data.num_rows
+            * (parseFloat($(".tile").css("width"))
+            + parseFloat($(".tile").css("border-left-width"))
+            + parseFloat($(".tile").css("border-right-width")));
+        var game_board_height_px = game_data.num_cols
+            * (parseFloat($(".tile").css("height"))
+            + parseFloat($(".tile").css("border-top-width"))
+            + parseFloat($(".tile").css("border-bottom-width")));
+        var game_board_left_pct = 100
+            * parseFloat(game_board_width_px)
+            / parseFloat($(".main").css("width"))
+            / 2; 
+        var game_board_top_px = 10
+            + (560 - parseFloat(game_board_width_px))/2; 
+        $("#game_board").css("height", game_board_height_px);
+        $("#game_board").css("left", (50 - game_board_left_pct)+"%");
+        $("#game_board").css("position", "absolute");
+        $("#game_board").css("top", game_board_top_px);
+        $("#game_board").css("width", game_board_width_px);
+        var undo_button = "<button id='undo' class='button'>Undo</button>"
+        $("#game_controls").empty();
+        var game_controls_top_px = game_board_top_px
+            + game_board_height_px + 20;
+        $("#game_controls").css("top", game_controls_top_px);
+        $("#game_controls").append(undo_button);
+        var undo_button_left_px = 
+            parseFloat($("#game_controls").css("width"))/2
+            - parseFloat($("#undo").css("width"))/2;
+        $("#undo").css("left", undo_button_left_px);
+        $("#undo").on(
+            "click",
+            function() {
+                var data = {"action": "undo"};
+                socket.send(JSON.stringify(data));
+            }
+        );
+        $("#game_status").empty();
+        var game_status_top_px = game_controls_top_px
+            + parseFloat($("#game_controls").css("height"))
+            + 20;
+        $("#game_status").css("top", game_status_top_px);
+        /*
+         * Step 2: Register the tile actions. The most important
+         *         ones are left-click to reveal a tile and right-click
+         *         ("contextmneu") to flag a tile.
+         */
+        $(".tile").on(
+            "click",
+            function() {
+                var currentTile = $(this);
+                var data = {
+                    "action": "reveal",
+                    "tile_index": currentTile.attr("id"),
+                };
+                socket.send(JSON.stringify(data));
+            },
+        );
+        $(".tile").on(
+            "contextmenu",
+            function(event) {
+                event.preventDefault();
+                var currentTile = $(this);
+                var data = {
+                    "action": "toggle_flag",
+                    "tile_index": currentTile.attr("id"),
+                };
+                socket.send(JSON.stringify(data));
+            },
+        );
+    }
+
+    /*
+     * Generate a new minesweeper game instance with the chosen difficulty
+     * level.
+     */
+    $("#new_game").on(
+        "submit",
+        function(event) {
+            event.preventDefault();
+            var data = {
+                "action": "new_game",
+                "difficulty": $("input[name='difficulty']:checked").val()
+            };
+            socket.send(JSON.stringify(data));
+        }
+    );
+
+    /*
+     * Fetch and reconstruct the present game state whenever we (re-)visit
+     * the game page. We achieve this by first reconstructing the game board
+     * and then updating to 'replay' the results of all tile actions that
+     * have happened thus far.
+     */
+    $("document").ready(
+        function () {
+            $.ajax({
+                type: "POST",
+                url: "{% url 'minesweeper:restore' %}",
+                success: function(json) {
+                    construct_game_board(json);
+                    update_game_board(json);
+                },
+            });
+        }
+    );
+</script>
